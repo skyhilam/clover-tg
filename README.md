@@ -25,9 +25,13 @@ php artisan vendor:publish --provider="Clover\CloverTg\ServiceProvider" --tag="c
 
 ## Usage
 
-first get start [CLOVER](https://t.me/clover_computer_ltd_bot) bot get your token
+first get start [CLOVER https://t.me/clover_computer_ltd_bot](https://t.me/clover_computer_ltd_bot) bot get your token
 add your token to .env file
+
+.env
+```
 TELEGRAM_TOKEN=token
+```
 
 ```php
   // use Facades\App\Telegram\Telegram;
@@ -36,6 +40,19 @@ TELEGRAM_TOKEN=token
   // order
   Telegram::sendWithCallback($message, $callbackurl, $ex_time = 60, $token = null)
 ```
+
+composer.json
+```json
+  //...
+  "repositories": [
+      {
+          "type": "vcs",
+          "url":  "git@github.com:skyhilam/clover-tg.git"
+      }
+  ],
+  //...
+```
+
 ## Security
 
 If you discover any security related issues, please email
