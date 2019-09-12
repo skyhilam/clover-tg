@@ -5,7 +5,7 @@ namespace Clover\CloverTg;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 
-class CloverTg{
+class CloverTg {
     protected $client;
 
     public function __construct()

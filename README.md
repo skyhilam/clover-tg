@@ -47,11 +47,9 @@ TELEGRAM_TOKEN=token
 ```
 
 ```php
-  // use Facades\App\Telegram\Telegram;
-
-  Telegram::send($message, $token)
+  CloverTg::send($message, $token)
   // order
-  Telegram::sendWithCallback($message, $callbackurl, $ex_time = 60, $token = null)
+  CloverTg::sendWithCallback($message, $callbackurl, $ex_time = 60, $token = null)
 ```
 
 
