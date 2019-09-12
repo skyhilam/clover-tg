@@ -13,6 +13,19 @@ Package description: CHANGE ME
 ## Installation
 
 Install via composer
+
+composer.json
+```json
+  //...
+  "repositories": [
+      {
+          "type": "vcs",
+          "url":  "git@github.com:skyhilam/clover-tg.git"
+      }
+  ],
+  //...
+```
+
 ```bash
 composer require clover/clover-tg
 ```
@@ -41,17 +54,6 @@ TELEGRAM_TOKEN=token
   Telegram::sendWithCallback($message, $callbackurl, $ex_time = 60, $token = null)
 ```
 
-composer.json
-```json
-  //...
-  "repositories": [
-      {
-          "type": "vcs",
-          "url":  "git@github.com:skyhilam/clover-tg.git"
-      }
-  ],
-  //...
-```
 
 ## Security
 
