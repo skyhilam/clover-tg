@@ -38,12 +38,12 @@ php artisan vendor:publish --provider="Clover\CloverTg\ServiceProvider" --tag="c
 
 ## Usage
 
-first get start [CLOVER https://t.me/clover_computer_ltd_bot](https://t.me/clover_computer_ltd_bot) bot get your token
-add your token to .env file
+first start [CLOVER https://t.me/clover_computer_ltd_bot](https://t.me/clover_computer_ltd_bot) bot to get your token then
+add your_token to .env file
 
 .env
 ```
-TELEGRAM_TOKEN=token
+TELEGRAM_TOKEN=your_token
 ```
 
 ```php
