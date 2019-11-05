@@ -25,14 +25,15 @@ class CloverTg {
         ]);
     }
 
-    public function sendWithCallback($message, $callback, $ex_time = 60, $token = null)
+    public function sendWithCallback($message, $callback, $ex_time = 60, $token = null, $options = [])
     {
         $message = is_array($message)? $this->arrayToString($message): $message;
         $this->sendMessage([
             'token' => $token ?? config('clover-tg.token'),
             'message' => $message,
             'ex_time' => $ex_time,
-            'callback' => $callback
+            'callback' => $callback,
+            'options' => $options,
         ]);
     }
 
