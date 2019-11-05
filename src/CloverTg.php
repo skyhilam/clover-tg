@@ -11,7 +11,7 @@ class CloverTg {
     public function __construct()
     {
         $this->client = new Client([
-            'base_uri' => 'https://tg.iclover.net',
+            'base_uri' => config('clover-tg.url'),
             'timeout' => 30.0,
         ]);
     }
