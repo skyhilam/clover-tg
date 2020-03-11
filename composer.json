@@ -9,16 +9,16 @@
   "type": "library",
   "authors": [
     {
-      "name": "",
-      "email": ""
+      "name": "skyhilam",
+      "email": "skyhilam@gmail.com"
     }
   ],
   "require": {
     "php": ">=7.2",
-    "illuminate/support": "^6.0",
-    "guzzlehttp/guzzle": "^6.3"
+    "illuminate/support": "^6.0|^7.0|^8.0"
   },
   "require-dev": {
+    "guzzlehttp/guzzle": "^6.4",
     "orchestra/testbench": "^4.0",
     "phpunit/phpunit": "^8.0"
   },
