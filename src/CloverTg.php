@@ -37,6 +37,20 @@ class CloverTg {
         ]);
     }
 
+    public function setPhoto($chatid, $photo_url, $caption) {
+        try {
+            $this->client->post('/send/photo', [
+                'form_params' => [
+                    'chat_id' => $chatid,
+                    'url' => $photo_url,
+                    'caption' => $caption
+                ]
+            ]);
+        } catch (ClientException $e) {
+            \Log::error($e->getMessage());
+        }
+    }
+
     protected function sendMessage($data)
     {
         try {
@@ -47,6 +61,8 @@ class CloverTg {
             \Log::error($e->getMessage());
         }
     }
+
+    
 
     protected function arrayToString($data, $glue = PHP_EOL)
     {
