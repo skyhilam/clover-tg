@@ -37,7 +37,7 @@ class CloverTg {
         ]);
     }
 
-    public function setPhoto($chatid, $photo_url, $caption) {
+    public function sendPhoto($chatid, $photo_url, $caption) {
         try {
             $this->client->post('/send/photo', [
                 'form_params' => [
