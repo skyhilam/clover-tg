@@ -65,3 +65,18 @@ instead of using the issue tracker.
 
 This package is bootstrapped with the help of
 [melihovv/laravel-package-generator](https://github.com/melihovv/laravel-package-generator).
+
+## Use
+```php
+// send text
+CloverTg::message('test by sky')
+            ->callback('http://localhost:8000/api/tg/test')
+            ->dispatch();
+
+// edit 
+CloverTg::message(join(PHP_EOL, ['test by sky', 'conform?']))
+            ->callback('http://localhost:8000/api/tg/test')
+            ->exTime(120) //seconds
+            ->messageId($mesage_id)
+            ->dispatch();
+```
