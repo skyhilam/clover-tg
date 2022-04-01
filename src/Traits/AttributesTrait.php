@@ -43,9 +43,9 @@ trait AttributesTrait
    * @param array|string $data
    * @return CloverTg $this
    * */
-  public function message($message)
+  public function message($data)
   {
-    $this->message = is_array($message) ? $this->arrayToString($message) : $message;
+    $this->message = is_array($data) ? join(PHP_EOL, $data) : $data;
 
     return $this;
   }
