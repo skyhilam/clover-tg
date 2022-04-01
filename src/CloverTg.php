@@ -12,9 +12,6 @@ class CloverTg
 
     protected $client;
 
-    protected string $message;
-    protected string $token;
-
     public function __construct()
     {
         $this->token(config('clover-tg.token'));
@@ -24,50 +21,14 @@ class CloverTg
             'timeout' => 30.0,
         ]);
     }
-
-    //  news v1.1
-    /** 
-     * 設置通知資料
-     * 
-     * @param array|string $data
-     * @return CloverTg $this
-     * */
-    public function message($data)
-    {
-        $this->message = $this->dataformated($data);
-
-        return $this;
-    }
-
-    /**
-     * 設置通知token
-     * 
-     * @param string
-     * @return CloverTg $this
-     * */
-    public function token(string $token)
-    {
-        $this->token = $token;
-
-        return $this;
-    }
-
     /**
      * 發送通知
      * 
      * 
      * */
-    public function notify(array $options = null)
+    public function notify()
     {
-        $this->sendMessage(
-            array_merge(
-                [
-                    'token' => $this->getToken(),
-                    'message' => $this->message,
-                ],
-                $options
-            )
-        );
+        $this->sendMessage($this->formdata());
     }
 
 
@@ -87,11 +48,10 @@ class CloverTg
     {
         $this->token($token)
             ->message($message)
-            ->notify([
-                'ex_time' => $ex_time,
-                'callback' => $callback,
-                'options' => $options,
-            ]);
+            ->exTime($ex_time)
+            ->callback($callback)
+            ->options($options)
+            ->notify();
 
         // $message = $this->dataformated($message);
         // $this->sendMessage([
@@ -127,28 +87,5 @@ class CloverTg
         } catch (ClientException $e) {
             \Log::error($e->getMessage());
         }
-    }
-
-    //  news v1.1
-
-    /**
-     * 獲取Token
-     * 
-     * @return string
-     * */
-    protected function getToken(): string
-    {
-        return $this->token ?? config('clover-tg.token');
-    }
-
-    /** 
-     * 格式化資料
-     * 
-     * @param string|array $data
-     * @return string
-     * */
-    protected function dataformated($data): string
-    {
-        return is_array($data) ? $this->arrayToString($data) : $data;
     }
 }
