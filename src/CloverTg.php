@@ -12,6 +12,9 @@ class CloverTg
 
     protected $client;
 
+    protected string $message;
+    protected string $token;
+
     public function __construct()
     {
         $this->token(config('clover-tg.token'));
@@ -22,6 +25,51 @@ class CloverTg
         ]);
     }
 
+    //  news v1.1
+    /** 
+     * 設置通知資料
+     * 
+     * @param array|string $data
+     * @return CloverTg $this
+     * */
+    public function message($data)
+    {
+        $this->message = $this->dataformated($data);
+
+        return $this;
+    }
+
+    /**
+     * 設置通知token
+     * 
+     * @param string
+     * @return CloverTg $this
+     * */
+    public function token(string $token)
+    {
+        $this->token = $token;
+
+        return $this;
+    }
+
+    /**
+     * 發送通知
+     * 
+     * 
+     * */
+    public function notify(array $options = null)
+    {
+        $this->sendMessage(
+            array_merge(
+                [
+                    'token' => $this->getToken(),
+                    'message' => $this->message,
+                ],
+                $options
+            )
+        );
+    }
+
 
     public function dispatch()
     {
@@ -30,23 +78,29 @@ class CloverTg
 
     public function send($message, $token = null)
     {
-        $message = is_array($message) ? $this->arrayToString($message) : $message;
-        $this->sendMessage([
-            'token' => $token ?? config('clover-tg.token'),
-            'message' => $message
-        ]);
+        $this->token($token)
+            ->message($message)
+            ->notify();
     }
 
     public function sendWithCallback($message, $callback, $ex_time = 60, $token = null, $options = [])
     {
-        $message = is_array($message) ? $this->arrayToString($message) : $message;
-        $this->sendMessage([
-            'token' => $token ?? config('clover-tg.token'),
-            'message' => $message,
-            'ex_time' => $ex_time,
-            'callback' => $callback,
-            'options' => $options,
-        ]);
+        $this->token($token)
+            ->message($message)
+            ->notify([
+                'ex_time' => $ex_time,
+                'callback' => $callback,
+                'options' => $options,
+            ]);
+
+        // $message = $this->dataformated($message);
+        // $this->sendMessage([
+        //     'token' => $this->getToken($token),
+        //     'message' => $message,
+        //     'ex_time' => $ex_time,
+        //     'callback' => $callback,
+        //     'options' => $options,
+        // ]);
     }
 
     public function sendPhoto($chatid, $photo_url, $caption)
@@ -75,4 +129,26 @@ class CloverTg
         }
     }
 
+    //  news v1.1
+
+    /**
+     * 獲取Token
+     * 
+     * @return string
+     * */
+    protected function getToken(): string
+    {
+        return $this->token ?? config('clover-tg.token');
+    }
+
+    /** 
+     * 格式化資料
+     * 
+     * @param string|array $data
+     * @return string
+     * */
+    protected function dataformated($data): string
+    {
+        return is_array($data) ? $this->arrayToString($data) : $data;
+    }
 }
