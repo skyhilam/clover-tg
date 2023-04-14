@@ -45,7 +45,7 @@ trait AttributesTrait
    * */
   public function message($data)
   {
-    $this->message = is_array($data) ? join(PHP_EOL, $data) : $data;
+    $this->message = is_array($data) ? $this->arrayToString($data) : $data;
 
     return $this;
   }
@@ -71,18 +71,20 @@ trait AttributesTrait
     return $this;
   }
 
-  protected function arrayToString($data, $glue = PHP_EOL)
+  protected function arrayToString(array $data, $glue = PHP_EOL)
   {
-    return implode($glue, array_map(
-      function ($v, $k) {
-        if (is_array($v)) {
-          return sprintf("%s: %s", $k, $this->arrayToString($v));
-        }
-        return sprintf("%s: %s", $k, $v);
-      },
-      $data,
-      array_keys($data)
-    ));
+    // laravel array to string
+    return collect($data)->map(function ($item, $key) {
+      if (is_array($item)) {
+        return $this->arrayToString($item);
+      }
+
+      if (is_numeric($key)) {
+        return $item;
+      }
+
+      return $key . ' : ' . $item;
+    })->implode($glue);
   }
 
   protected function formdata()
