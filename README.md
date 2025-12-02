@@ -152,6 +152,32 @@ CloverTg::editCaption($messageId, '更新後的圖片說明');
 CloverTg::edit($messageId, '更新後的內容', $customToken);
 ```
 
+### TOTP 驗證
+
+用於驗證用戶輸入的動態驗證碼（從 Telegram Bot 的 `/totp` 指令獲取）。
+
+```php
+// 簡單驗證（返回 bool）
+if (CloverTg::verifyTotp($code)) {
+    // 驗證成功
+    return redirect()->intended('/dashboard');
+} else {
+    // 驗證失敗
+    return back()->withErrors(['code' => '驗證碼無效']);
+}
+
+// 指定 Token 驗證
+if (CloverTg::verifyTotp($code, $userToken)) {
+    // 驗證成功
+}
+
+// 獲取詳細結果
+$result = CloverTg::verifyTotpWithResult($code);
+if ($result) {
+    // $result = ['token' => 'xxx']
+}
+```
+
 ### 發送圖片
 
 ```php
@@ -202,6 +228,13 @@ if (CloverTg::isSuccess()) {
 |------|------|
 | `edit($message_id, $message, $token = null)` | 編輯文字訊息 |
 | `editCaption($message_id, $caption, $token = null)` | 編輯圖片標題 |
+
+### TOTP 方法
+
+| 方法 | 說明 |
+|------|------|
+| `verifyTotp($code, $token = null)` | 驗證 TOTP 驗證碼，返回 bool |
+| `verifyTotpWithResult($code, $token = null)` | 驗證並返回詳細結果 |
 
 ### 圖片方法
 

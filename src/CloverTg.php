@@ -65,6 +65,46 @@ class CloverTg
     return $this->notify();
   }
 
+  // ==================== TOTP 驗證 ====================
+
+  /**
+   * 驗證 TOTP 驗證碼
+   * 
+   * @param string $code 6 位數驗證碼
+   * @param string|null $token Token（不傳則使用配置中的 token）
+   * @return bool 驗證是否成功
+   */
+  public function verifyTotp($code, $token = null)
+  {
+    $result = $this->request('/totp/verify', [
+      'token' => $token ?: $this->getToken(),
+      'code' => $code
+    ]);
+
+    return $this->isSuccess() && isset($result['data']);
+  }
+
+  /**
+   * 驗證 TOTP 並返回詳細結果
+   * 
+   * @param string $code 6 位數驗證碼
+   * @param string|null $token Token
+   * @return array|null 成功返回 ['token' => '...']，失敗返回 null
+   */
+  public function verifyTotpWithResult($code, $token = null)
+  {
+    $result = $this->request('/totp/verify', [
+      'token' => $token ?: $this->getToken(),
+      'code' => $code
+    ]);
+
+    if ($this->isSuccess() && isset($result['data']['data'])) {
+      return $result['data']['data'];
+    }
+
+    return null;
+  }
+
   // ==================== 編輯方法 ====================
 
   public function edit($message_id, $message, $token = null)
