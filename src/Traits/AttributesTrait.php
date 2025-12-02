@@ -16,6 +16,8 @@ trait AttributesTrait
 
   protected $options = [];
 
+  protected $buttons = [];
+
 
   /**
    * 設置通知token
@@ -71,6 +73,25 @@ trait AttributesTrait
     return $this;
   }
 
+  /**
+   * 設置自定義按鈕
+   * 
+   * @param array $buttons 按鈕陣列，每個按鈕包含 id 和 text
+   * @return $this
+   * 
+   * @example
+   * $tg->buttons([
+   *   ['id' => 'approve', 'text' => '批准'],
+   *   ['id' => 'reject', 'text' => '拒絕'],
+   * ]);
+   */
+  public function buttons($buttons)
+  {
+    $this->buttons = $buttons;
+
+    return $this;
+  }
+
   protected function arrayToString(array $data, $glue = PHP_EOL)
   {
     // laravel array to string
@@ -95,7 +116,8 @@ trait AttributesTrait
       'message_id' => $this->message_id,
       'callback' => $this->callback,
       'ex_time' => $this->ex_time,
-      'options' => $this->options
+      'options' => $this->options,
+      'buttons' => $this->buttons
     ];
   }
 
