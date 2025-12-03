@@ -3,26 +3,41 @@
 namespace Clover\CloverTg;
 
 use Clover\CloverTg\Traits\AttributesTrait;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Http\Client\RequestException;
 
 class CloverTg
 {
   use AttributesTrait;
 
-  protected $client;
+  protected $baseUrl;
   protected $errorHandler = null;
   protected $lastError = null;
   protected $lastResponse = null;
+  protected $httpClient = null;
 
   public function __construct()
   {
     $this->token(config('clover-tg.token'));
-    $this->client = new Client([
-      'base_uri' => config('clover-tg.url'),
-      'timeout' => 30.0,
-    ]);
+    $this->baseUrl = config('clover-tg.url');
+  }
+
+  /**
+   * 設置自定義 HTTP Client（用於測試）
+   */
+  public function setHttpClient(HttpFactory $client)
+  {
+    $this->httpClient = $client;
+    return $this;
+  }
+
+  /**
+   * 獲取 HTTP Client
+   */
+  protected function http()
+  {
+    return $this->httpClient ?: Http::getFacadeRoot();
   }
 
   // ==================== 狀態管理 ====================
@@ -144,20 +159,31 @@ class CloverTg
     $this->clearState();
 
     try {
-      $response = $this->client->post($path, ['form_params' => $data]);
-      $body = $response->getBody()->getContents();
+      $response = $this->http()
+        ->baseUrl($this->baseUrl)
+        ->timeout(30)
+        ->asForm()
+        ->post($path, $data);
       
+      if ($response->failed()) {
+        $this->handleError(new \Exception('HTTP request failed'), [
+          'path' => $path,
+          'type' => 'client_error',
+          'status' => $response->status(),
+          'body' => $response->json() ?: $response->body()
+        ]);
+        return null;
+      }
+
       $this->lastResponse = [
-        'status' => $response->getStatusCode(),
-        'data' => json_decode($body, true),
+        'status' => $response->status(),
+        'data' => $response->json(),
         'path' => $path
       ];
 
       return $this->lastResponse;
-    } catch (ClientException $e) {
+    } catch (RequestException $e) {
       $this->handleError($e, ['path' => $path, 'type' => 'client_error']);
-    } catch (GuzzleException $e) {
-      $this->handleError($e, ['path' => $path, 'type' => 'network_error']);
     } catch (\Exception $e) {
       $this->handleError($e, ['path' => $path, 'type' => 'unknown_error']);
     }
@@ -173,12 +199,10 @@ class CloverTg
       'time' => date('Y-m-d H:i:s')
     ];
 
-    if ($e instanceof ClientException && $e->hasResponse()) {
-      $response = $e->getResponse();
-      $body = $response->getBody()->getContents();
+    if ($e instanceof RequestException && $e->response) {
       $errorInfo['response'] = [
-        'status' => $response->getStatusCode(),
-        'body' => json_decode($body, true) ?: $body
+        'status' => $e->response->status(),
+        'body' => $e->response->json() ?: $e->response->body()
       ];
     }
 

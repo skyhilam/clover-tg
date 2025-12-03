@@ -3,51 +3,33 @@
 namespace Clover\CloverTg\Tests;
 
 use Clover\CloverTg\CloverTg;
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Psr7\Request;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use PHPUnit\Framework\TestCase;
 
 class CloverTgTest extends TestCase
 {
     protected $cloverTg;
-    protected $mockHandler;
+    protected $httpFactory;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->cloverTg = $this->createCloverTgWithMock();
+        $this->httpFactory = new HttpFactory();
+        $this->cloverTg = $this->createCloverTg();
     }
 
     /**
-     * 創建帶有 Mock HTTP 客戶端的 CloverTg 實例
+     * 創建 CloverTg 實例
      */
-    protected function createCloverTgWithMock($responses = [])
+    protected function createCloverTg()
     {
-        if (empty($responses)) {
-            $responses = [
-                new Response(200, [], json_encode(['data' => 'ok']))
-            ];
-        }
-
-        $this->mockHandler = new MockHandler($responses);
-        $handlerStack = HandlerStack::create($this->mockHandler);
-        $mockClient = new Client(['handler' => $handlerStack]);
-
-        // 創建 CloverTg 實例並注入 mock client
+        // 創建 CloverTg 實例，覆蓋構造函數避免依賴 Laravel config
         $cloverTg = new class extends CloverTg {
             public function __construct()
             {
                 // 不調用父構造函數，避免依賴 Laravel config
                 $this->token = 'test-token';
-            }
-            
-            public function setMockClient($client)
-            {
-                $this->client = $client;
+                $this->baseUrl = 'https://api.example.com';
             }
             
             // 覆蓋 getToken 方法以避免調用 Laravel config()
@@ -56,10 +38,30 @@ class CloverTgTest extends TestCase
                 return $this->token ?? 'test-token';
             }
         };
-        
-        $cloverTg->setMockClient($mockClient);
+
+        $cloverTg->setHttpClient($this->httpFactory);
 
         return $cloverTg;
+    }
+
+    /**
+     * 設置 Http::fake 模擬成功回應
+     */
+    protected function fakeSuccessResponse($data = ['data' => 'ok'])
+    {
+        $this->httpFactory->fake([
+            '*' => $this->httpFactory->response($data, 200)
+        ]);
+    }
+
+    /**
+     * 設置 Http::fake 模擬錯誤回應
+     */
+    protected function fakeErrorResponse($data = ['error' => 'Bad Request'], $status = 400)
+    {
+        $this->httpFactory->fake([
+            '*' => $this->httpFactory->response($data, $status)
+        ]);
     }
 
     // ==================== 基本功能測試 ====================
@@ -69,6 +71,7 @@ class CloverTgTest extends TestCase
      */
     public function it_can_set_token()
     {
+        $this->fakeSuccessResponse();
         $result = $this->cloverTg->token('custom-token');
         
         $this->assertSame($this->cloverTg, $result);
@@ -79,6 +82,7 @@ class CloverTgTest extends TestCase
      */
     public function it_can_set_message()
     {
+        $this->fakeSuccessResponse();
         $result = $this->cloverTg->message('Test message');
         
         $this->assertSame($this->cloverTg, $result);
@@ -89,6 +93,7 @@ class CloverTgTest extends TestCase
      */
     public function it_can_set_message_id()
     {
+        $this->fakeSuccessResponse();
         $result = $this->cloverTg->messageId(12345);
         
         $this->assertSame($this->cloverTg, $result);
@@ -99,6 +104,7 @@ class CloverTgTest extends TestCase
      */
     public function it_can_set_callback()
     {
+        $this->fakeSuccessResponse();
         $result = $this->cloverTg->callback('https://example.com/callback');
         
         $this->assertSame($this->cloverTg, $result);
@@ -109,6 +115,7 @@ class CloverTgTest extends TestCase
      */
     public function it_can_set_ex_time()
     {
+        $this->fakeSuccessResponse();
         $result = $this->cloverTg->exTime(120);
         
         $this->assertSame($this->cloverTg, $result);
@@ -119,6 +126,7 @@ class CloverTgTest extends TestCase
      */
     public function it_can_set_options()
     {
+        $this->fakeSuccessResponse();
         $result = $this->cloverTg->options(['key' => 'value']);
         
         $this->assertSame($this->cloverTg, $result);
@@ -129,6 +137,7 @@ class CloverTgTest extends TestCase
      */
     public function it_can_set_buttons()
     {
+        $this->fakeSuccessResponse();
         $buttons = [
             ['id' => 'approve', 'text' => '批准'],
             ['id' => 'reject', 'text' => '拒絕'],
@@ -146,6 +155,7 @@ class CloverTgTest extends TestCase
      */
     public function it_supports_chained_calls()
     {
+        $this->fakeSuccessResponse();
         $result = $this->cloverTg
             ->token('test-token')
             ->message('Test message')
@@ -165,10 +175,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_send_message()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => ['message_id' => 123]]))
-        ]);
+        $this->fakeSuccessResponse(['data' => ['message_id' => 123]]);
 
+        $cloverTg = $this->createCloverTg();
         $result = $cloverTg->send('Hello World!');
         
         $this->assertNotNull($result);
@@ -180,10 +189,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_notify()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => 'ok']))
-        ]);
+        $this->fakeSuccessResponse(['data' => 'ok']);
 
+        $cloverTg = $this->createCloverTg();
         $result = $cloverTg->message('Test notification')->notify();
         
         $this->assertNotNull($result);
@@ -195,10 +203,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_dispatch()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => 'ok']))
-        ]);
+        $this->fakeSuccessResponse(['data' => 'ok']);
 
+        $cloverTg = $this->createCloverTg();
         $result = $cloverTg->message('Test dispatch')->dispatch();
         
         $this->assertNotNull($result);
@@ -210,10 +217,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_send_with_callback()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => ['message_id' => 123]]))
-        ]);
+        $this->fakeSuccessResponse(['data' => ['message_id' => 123]]);
 
+        $cloverTg = $this->createCloverTg();
         // 新的統一 API：第三個參數為選項陣列
         $result = $cloverTg->sendWithCallback(
             'Please confirm',
@@ -230,10 +236,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_send_with_buttons()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => ['message_id' => 123]]))
-        ]);
+        $this->fakeSuccessResponse(['data' => ['message_id' => 123]]);
 
+        $cloverTg = $this->createCloverTg();
         $buttons = [
             ['id' => 'approve', 'text' => '批准'],
             ['id' => 'reject', 'text' => '拒絕'],
@@ -257,10 +262,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_send_photo()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => ['message_id' => 123]]))
-        ]);
+        $this->fakeSuccessResponse(['data' => ['message_id' => 123]]);
 
+        $cloverTg = $this->createCloverTg();
         $result = $cloverTg->sendPhoto(
             '123456789',
             'https://example.com/image.jpg',
@@ -276,10 +280,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_send_photos()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => ['message_id' => 123]]))
-        ]);
+        $this->fakeSuccessResponse(['data' => ['message_id' => 123]]);
 
+        $cloverTg = $this->createCloverTg();
         $result = $cloverTg->sendPhotos(
             '123456789',
             [
@@ -298,10 +301,9 @@ class CloverTgTest extends TestCase
      */
     public function it_sends_single_photo_when_urls_is_string()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => ['message_id' => 123]]))
-        ]);
+        $this->fakeSuccessResponse(['data' => ['message_id' => 123]]);
 
+        $cloverTg = $this->createCloverTg();
         $result = $cloverTg->sendPhotos(
             '123456789',
             'https://example.com/image.jpg',
@@ -319,10 +321,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_edit_message()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => true]))
-        ]);
+        $this->fakeSuccessResponse(['data' => true]);
 
+        $cloverTg = $this->createCloverTg();
         $result = $cloverTg->edit(12345, 'Updated message');
         
         $this->assertNotNull($result);
@@ -334,10 +335,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_edit_caption()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => true]))
-        ]);
+        $this->fakeSuccessResponse(['data' => true]);
 
+        $cloverTg = $this->createCloverTg();
         $result = $cloverTg->editCaption(12345, 'Updated caption');
         
         $this->assertNotNull($result);
@@ -351,13 +351,9 @@ class CloverTgTest extends TestCase
      */
     public function it_handles_client_error()
     {
-        $request = new Request('POST', '/send');
-        $response = new Response(400, [], json_encode(['error' => 'Bad Request']));
-        
-        $cloverTg = $this->createCloverTgWithMock([
-            new ClientException('Bad Request', $request, $response)
-        ]);
+        $this->fakeErrorResponse(['error' => 'Bad Request'], 400);
 
+        $cloverTg = $this->createCloverTg();
         // 設置自定義錯誤處理器以避免調用 \Log
         $cloverTg->onError(function ($e, $context) {});
 
@@ -373,13 +369,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_get_last_error()
     {
-        $request = new Request('POST', '/send');
-        $response = new Response(400, [], json_encode(['error' => 'Bad Request']));
-        
-        $cloverTg = $this->createCloverTgWithMock([
-            new ClientException('Bad Request', $request, $response)
-        ]);
+        $this->fakeErrorResponse(['error' => 'Bad Request'], 400);
 
+        $cloverTg = $this->createCloverTg();
         // 設置自定義錯誤處理器以避免調用 \Log
         $cloverTg->onError(function ($e, $context) {});
 
@@ -397,10 +389,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_get_last_response()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => ['message_id' => 123]]))
-        ]);
+        $this->fakeSuccessResponse(['data' => ['message_id' => 123]]);
 
+        $cloverTg = $this->createCloverTg();
         $cloverTg->send('Test message');
         $response = $cloverTg->getLastResponse();
         
@@ -415,10 +406,9 @@ class CloverTgTest extends TestCase
      */
     public function it_can_clear_state()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => 'ok']))
-        ]);
+        $this->fakeSuccessResponse(['data' => 'ok']);
 
+        $cloverTg = $this->createCloverTg();
         $cloverTg->send('Test message');
         $this->assertNotNull($cloverTg->getLastResponse());
         
@@ -432,16 +422,12 @@ class CloverTgTest extends TestCase
      */
     public function it_can_set_custom_error_handler()
     {
+        $this->fakeErrorResponse(['error' => 'Bad Request'], 400);
+
         $errorHandlerCalled = false;
         $capturedError = null;
-        
-        $request = new Request('POST', '/send');
-        $response = new Response(400, [], json_encode(['error' => 'Bad Request']));
-        
-        $cloverTg = $this->createCloverTgWithMock([
-            new ClientException('Bad Request', $request, $response)
-        ]);
 
+        $cloverTg = $this->createCloverTg();
         $cloverTg->onError(function ($e, $context) use (&$errorHandlerCalled, &$capturedError) {
             $errorHandlerCalled = true;
             $capturedError = $context;
@@ -460,10 +446,9 @@ class CloverTgTest extends TestCase
      */
     public function it_returns_true_for_success()
     {
-        $cloverTg = $this->createCloverTgWithMock([
-            new Response(200, [], json_encode(['data' => 'ok']))
-        ]);
+        $this->fakeSuccessResponse(['data' => 'ok']);
 
+        $cloverTg = $this->createCloverTg();
         $cloverTg->send('Test');
         
         $this->assertTrue($cloverTg->isSuccess());
@@ -474,13 +459,9 @@ class CloverTgTest extends TestCase
      */
     public function it_returns_false_for_failure()
     {
-        $request = new Request('POST', '/send');
-        $response = new Response(500, [], json_encode(['error' => 'Server Error']));
-        
-        $cloverTg = $this->createCloverTgWithMock([
-            new ClientException('Server Error', $request, $response)
-        ]);
+        $this->fakeErrorResponse(['error' => 'Server Error'], 500);
 
+        $cloverTg = $this->createCloverTg();
         // 設置自定義錯誤處理器以避免調用 \Log
         $cloverTg->onError(function ($e, $context) {});
 
